@@ -1,4 +1,4 @@
-OBJECTS = k/loader.o k/kmain.o
+OBJECTS = k/loader.o k/kmain.o k/printf.o
 CC = i686-elf-gcc
 CFLAGS = -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 LDFLAGS = -T link.ld
@@ -19,6 +19,7 @@ run: os.iso
 	qemu-system-x86_64 \
 	-m 4G \
 	-boot d \
+	-serial stdio \
 	-cdrom os.iso
 
 %.o: %.c

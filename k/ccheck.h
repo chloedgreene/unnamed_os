@@ -1,3 +1,4 @@
+#pragma once
 
 // When were compiling to a bare metal platform, we need to check if the compiler toolchain is working correctly
 
