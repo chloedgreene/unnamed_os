@@ -42,6 +42,7 @@ bootloader will jump to this position once the kernel has been loaded. It
 doesn't make sense to return from this function as the bootloader is gone.
 */
 .section .text
+.global load_gdt
 .global _start
 .type _start, @function
 _start:
@@ -51,8 +52,21 @@ _start:
 1:	hlt
 	jmp 1b
 
-/*
-Set the size of the _start symbol to the current location '.' minus its start.
-This is useful when debugging or when you implement call tracing.
-*/
+load_gdt:
+    movl 4(%esp), %eax    # get gdt pointer
+    lgdt (%eax)           # load gdt
+    movw $0x10, %ax        # kernel data segment
+    movw %ax, %ds
+    movw %ax, %es
+    movw %ax, %fs
+    movw %ax, %gs
+    movw %ax, %ss
+    cli                    # clear interrupts
+    movl %cr0, %eax        # set bit 0 in cr0 to enter protected mode
+    orl $1, %eax
+    movl %eax, %cr0
+    jmp far_jump           # jump to far with code data segment
+far_jump:
+    ret
+
 .size _start, . - _start
