@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "name": "OS",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "k/**",
+                "/usr/include"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/i686-elf-gcc",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "macos-clang-x86",
+            "compilerArgs": [
+                "-std=gnu99 -ffreestanding -O2 -Wall -Wextra"
+            ]
+        }
+    ],
+    "version": 4
+}
