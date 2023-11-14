@@ -1,5 +1,7 @@
 #pragma once
 
+#define TERM_VGA_ENABLE //enable VGA driver
+#define TERM_SERIAL_ENABLE //enable serial driver
 #include "vga.h"
 #include "serial.h"
 void _putchar(char character);

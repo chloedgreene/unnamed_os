@@ -5,6 +5,10 @@
         "string": "cpp",
         "string_view": "cpp",
         "span": "cpp",
-        "printf.h": "c"
+        "printf.h": "c",
+        "isr.h": "c",
+        "8259_pic.h": "c",
+        "idt.h": "c",
+        "gdt.h": "c"
     }
 }

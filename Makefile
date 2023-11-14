@@ -20,6 +20,7 @@ run: os.iso
 	-m 4G \
 	-boot d \
 	-serial stdio \
+	-usb -device usb-kbd \
 	-cdrom os.iso
 
 %.o: %.c
@@ -27,6 +28,9 @@ run: os.iso
 
 %.o: %.s
 	$(AS) $(ASFLAGS) $< -o $@
+
+%.o: %.asm
+	nasm -f elf $< -o $@
 
 clean:
 	rm -rf *.o kernel.bin os.iso isodir k/*.o

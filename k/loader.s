@@ -44,6 +44,7 @@ doesn't make sense to return from this function as the bootloader is gone.
 .section .text
 .global load_gdt
 .global _start
+.global _irq_handler
 .type _start, @function
 _start:
 	mov $stack_top, %esp
@@ -52,6 +53,16 @@ _start:
 1:	hlt
 	jmp 1b
 
+_irq_handler:
+    pusha
+    call timer_handler
+    popa
+    mov $0x20, %al
+    out %al, $0x20
+    out %al, $0xA0
+    sti
+    iret
+    
 load_gdt:
     movl 4(%esp), %eax    # get gdt pointer
     lgdt (%eax)           # load gdt

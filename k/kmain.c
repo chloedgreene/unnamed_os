@@ -7,58 +7,74 @@
 
 #include "inx.h"
 #include "outx.h"
-
-#define TERM_VGA_ENABLE //enable VGA driver
-#define TERM_SERIAL_ENABLE //enable serial driver
 #include "term.h"
-
 
 #include "gdt.h"
 
-GDT g_gdt[NO_GDT_DESCRIPTORS];
-GDT_PTR g_gdt_ptr;
-
-/**
- * fill entries of GDT 
- */
-void gdt_set_entry(int index, uint32 base, uint32 limit, uint8 access, uint8 gran) {
-    GDT *this = &g_gdt[index];
-
-    this->segment_limit = limit & 0xFFFF;
-    this->base_low = base & 0xFFFF;
-    this->base_middle = (base >> 16) & 0xFF;
-    this->access = access;
-
-    this->granularity = (limit >> 16) & 0x0F;
-    this->granularity = this->granularity | (gran & 0xF0);
-
-    this->base_high = (base >> 24 & 0xFF);
-}
-
-// initialize GDT
-void gdt_init() {
-    g_gdt_ptr.limit = sizeof(g_gdt) - 1;
-    g_gdt_ptr.base_address = (uint32)g_gdt;
-
-    // NULL segment
-    gdt_set_entry(0, 0, 0, 0, 0);
-    // code segment
-    gdt_set_entry(1, 0, 0xFFFFFFFF, 0x9A, 0xCF);
-    // data segment
-    gdt_set_entry(2, 0, 0xFFFFFFFF, 0x92, 0xCF);
-    // user code segment
-    gdt_set_entry(3, 0, 0xFFFFFFFF, 0xFA, 0xCF);
-    // user data segment
-    gdt_set_entry(4, 0, 0xFFFFFFFF, 0xF2, 0xCF);
-
-    load_gdt((uint32)&g_gdt_ptr);
+extern void _irq_handler();
+void set_irq_handler(int irq, uint32_t handler);
+void init_timer();
+bool toggle = 0;
+void timer_handler(){
+    toggle = 1;
 }
 
 void kernel_main(void) 
 {
 	gdt_init();
 	term_init();
+    init_timer();
 
+    printf("hello mr.mac, this is the greatest opotating system ever");
 
-	printf("Hello!");
+    while (1==1)
+    {
+        if(toggle == 1){
+            printf("TIMER!");
+            toggle = 0;
+        }
+    }
+    
+
+}
+
+void set_irq_handler(int irq, uint32_t handler) {
+    // Calculate the address of the IDT entry for the given IRQ
+    uint32_t idt_entry = 0x80000000 + (irq + 32) * 8;
+
+    // Set the handler address in the IDT entry
+    *(uint16_t*)idt_entry = (uint16_t)(handler & 0xFFFF);
+    *(uint16_t*)(idt_entry + 2) = 0x08;  // Code segment selector
+    *(uint8_t*)(idt_entry + 4) = 0x8E;   // Interrupt gate
+    *(uint16_t*)(idt_entry + 5) = (uint16_t)((handler >> 16) & 0xFFFF);
+}
+
+void init_timer() {
+    // Configure the master and slave PICs
+
+    // Master PIC initialization
+    outb(0x20, 0x11);  // Start initialization
+    outb(0x21, 0x20);  // Set interrupt vector offset to 32
+    outb(0x21, 0x04);  // Tell the master PIC that there is a slave PIC at IRQ2
+    outb(0x21, 0x01);  // Set 8086/88 (MCS-80/85) mode
+    outb(0x21, 0xFF);  // Mask all interrupts
+
+    // Slave PIC initialization
+    outb(0xA0, 0x11);  // Start initialization
+    outb(0xA1, 0x28);  // Set interrupt vector offset to 40
+    outb(0xA1, 0x02);  // Tell the slave PIC its cascade identity
+    outb(0xA1, 0x01);  // Set 8086/88 (MCS-80/85) mode
+    outb(0xA1, 0xFF);  // Mask all interrupts
+
+    // Install the IRQ handler
+    set_irq_handler(0, (uint32_t)_irq_handler);
+
+    // Unmask the timer interrupt on the master PIC
+    outb(0x21, inb(0x21) & 0xFD);  // 0xFD = 1111 1101 (bitmask to enable IRQ0)
+
+    // Unmask the timer interrupt on the slave PIC
+    outb(0xA1, inb(0xA1) & 0xFB);  // 0xFB = 1111 1011 (bitmask to enable IRQ2)
+
+    // Enable interrupts
+    asm volatile("sti");
 }
